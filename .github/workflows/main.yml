@@ -11,9 +11,10 @@ permissions:
   contents: read
 
 env:
-  # Leave this as "." if settings.gradle.kts sits at the repo root.
-  # Set it to a subfolder name if the Gradle project lives one level down.
-  PROJECT_DIR: .
+  # Name of the zip file committed at the repo root, and the folder name
+  # it unzips to (both are "StegoForensics..." by default).
+  PROJECT_ZIP: StegoForensics-android-project.zip
+  PROJECT_DIR: StegoForensics
 
 jobs:
   build:
@@ -23,14 +24,19 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: List repository contents (diagnostic)
+      - name: Unzip project (repo stores it as a .zip, not extracted)
         run: |
-          echo "---- repo root ----"
-          ls -la
-          echo "---- full tree (depth 3) ----"
-          find . -maxdepth 3 -not -path '*/.git*' | sort
-          echo "---- looking for settings.gradle* anywhere ----"
-          find . -iname "settings.gradle*" -not -path '*/.git*'
+          if [ -d "$PROJECT_DIR" ] && [ -f "$PROJECT_DIR/settings.gradle.kts" ]; then
+            echo "Project already extracted at $PROJECT_DIR, skipping unzip."
+          elif [ -f "$PROJECT_ZIP" ]; then
+            echo "Extracting $PROJECT_ZIP ..."
+            unzip -o "$PROJECT_ZIP" -d .
+          else
+            echo "::error::Neither $PROJECT_DIR/ nor $PROJECT_ZIP were found in the repo root."
+            exit 1
+          fi
+          echo "---- contents of $PROJECT_DIR ----"
+          find "$PROJECT_DIR" -maxdepth 2 -not -path '*/.git*' | sort
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -69,6 +75,17 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Unzip project (repo stores it as a .zip, not extracted)
+        run: |
+          if [ -d "$PROJECT_DIR" ] && [ -f "$PROJECT_DIR/settings.gradle.kts" ]; then
+            echo "Project already extracted at $PROJECT_DIR, skipping unzip."
+          elif [ -f "$PROJECT_ZIP" ]; then
+            unzip -o "$PROJECT_ZIP" -d .
+          else
+            echo "::error::Neither $PROJECT_DIR/ nor $PROJECT_ZIP were found in the repo root."
+            exit 1
+          fi
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
