@@ -10,13 +10,10 @@ on:
 permissions:
   contents: read
 
-# If your Gradle project lives in a subfolder of the repo (e.g. the repo
-# root contains a "StegoForensics" folder that holds settings.gradle.kts),
-# set that folder name here. If settings.gradle.kts is at the repo root
-# instead, change this to "." and the working-directory lines below become
-# unnecessary (but harmless either way).
 env:
-  PROJECT_DIR: StegoForensics
+  # Leave this as "." if settings.gradle.kts sits at the repo root.
+  # Set it to a subfolder name if the Gradle project lives one level down.
+  PROJECT_DIR: .
 
 jobs:
   build:
@@ -25,6 +22,15 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: List repository contents (diagnostic)
+        run: |
+          echo "---- repo root ----"
+          ls -la
+          echo "---- full tree (depth 3) ----"
+          find . -maxdepth 3 -not -path '*/.git*' | sort
+          echo "---- looking for settings.gradle* anywhere ----"
+          find . -iname "settings.gradle*" -not -path '*/.git*'
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
